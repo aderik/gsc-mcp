@@ -131,6 +131,7 @@ if __name__ == "__main__":
         try:
             _selftest()
         except Exception as e:
+            sys.stdout.flush()  # keep the progress lines above the error when piped
             print(f"SELFTEST FAILED: {e}", file=sys.stderr)
             sys.exit(1)
     else:
