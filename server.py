@@ -8,6 +8,7 @@ from urllib.parse import quote
 from google.auth.transport.requests import AuthorizedSession
 from google.oauth2 import service_account
 from mcp.server.mcpserver import MCPServer
+from mcp.server.mcpserver.exceptions import ToolError
 
 SA_JSON = os.path.expanduser(os.environ.get("GSC_SA_JSON", "~/.config/ga-mcp/sa.json"))
 SCOPES = ["https://www.googleapis.com/auth/webmasters.readonly"]
@@ -28,13 +29,14 @@ def _session():
 def _call(method, url, **kw):
     r = _session().request(method, url, **kw)
     if r.status_code == 403:
-        raise RuntimeError(
+        raise ToolError(
             f"403 from {url}. Two likely causes: (1) the Search Console API is not enabled "
             f"in the GCP project, or (2) the service account's client_email from {SA_JSON} "
             f"has not been added as a user in Search Console "
             f"(Settings -> Users and permissions; 'Restricted' is enough). Body: {r.text[:300]}"
         )
-    r.raise_for_status()
+    if not r.ok:
+        raise ToolError(f"{r.status_code} from {url}: {r.text[:500]}")
     return r.json()
 
 
